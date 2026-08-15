@@ -1,0 +1,31 @@
+{
+  "name": "imax-camera-gif-maker",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "type": "module",
+  "private": true,
+  "dependencies": {
+    "@fontsource/ibm-plex-mono": "^5.3.0",
+    "@fontsource/ibm-plex-sans": "^5.3.0",
+    "gifsicle-wasm-browser": "^1.5.19",
+    "gifski-wasm": "^2.2.0"
+  },
+  "devDependencies": {
+    "vite": "^8.2.1",
+    "vite-plugin-pwa": "^1.3.0"
+  },
+  "description": "Turn frames captured with the IMAX Camera VRChat avatar addon into an animated GIF, entirely in the browser.",
+  "license": "AGPL-3.0-or-later",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ToniccFox/imax-camera-gif-maker.git"
+  },
+  "homepage": "https://github.com/ToniccFox/imax-camera-gif-maker#readme",
+  "bugs": {
+    "url": "https://github.com/ToniccFox/imax-camera-gif-maker/issues"
+  }
+}
