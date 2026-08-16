@@ -28,10 +28,10 @@ export default defineConfig({
   plugins: [
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icon.svg'],
+      includeAssets: ['icon.svg', 'ToniccHeart.ico'],
       manifest: {
-        name: 'IMAX Camera GIF Maker',
-        short_name: 'GIF Maker',
+        name: "Tonicc's VRChat IMAX GIF Maker",
+        short_name: 'IMAX GIF',
         description:
           'Turn frames captured with the IMAX Camera VRChat avatar addon into a GIF, entirely in your browser.',
         theme_color: '#0c0c0e',
@@ -43,7 +43,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,wasm,woff2,svg}'],
+        globPatterns: ['**/*.{js,css,html,wasm,woff2,svg,ico}'],
         // gifsicle's bundle and the gifski wasm blobs are well over the default cap.
         maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
       },

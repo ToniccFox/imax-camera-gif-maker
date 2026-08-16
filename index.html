@@ -3,12 +3,12 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>IMAX Camera GIF Maker</title>
+    <title>VRChat IMAX GIF Maker</title>
     <meta
       name="description"
       content="Turn frames captured with the IMAX Camera VRChat avatar addon into a GIF. Everything runs in your browser - your images never leave your device."
     />
-    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/ToniccHeart.ico" type="image/x-icon" />
     <meta name="theme-color" content="#0c0c0e" />
   </head>
   <body>
@@ -16,7 +16,7 @@
 
     <header class="masthead">
       <div class="brand">
-        <h1>IMAX Camera GIF Maker</h1>
+        <h1>Tonicc's VRChat IMAX GIF Maker</h1>
         <p class="brand-sub">
           Turn your VRChat IMAX frames into a real .gif file for you and your friends!
         </p>
@@ -44,88 +44,231 @@
     </header>
 
     <main class="layout">
+      <!-- ───────────────────────── intake ───────────────────────── -->
+      <div class="dropzone" id="dropzone" tabindex="0" role="button"
+           aria-label="Choose frames, or drop them here">
+        <input
+          type="file"
+          id="fileInput"
+          accept="image/png,image/jpeg,image/webp"
+          multiple
+          hidden
+        />
+        <p class="dz-title">Drop your frames here</p>
+        <p class="dz-sub">
+          or <span class="dz-link">browse</span> - PNG, JPG or WebP, 2 frames minimum
+        </p>
+        <p class="dz-hint">
+          Enable the "Save GIF" menu toggle in VRChat, then place your VRChat
+          camera inside of the black orb. Take a photo, then use the "Save Next
+          Frame" button to view the next frame, and take another photo of the
+          next frame. Continue until you have a photo of each of the 16 frames.
+          Find your photos/frames in <code>Pictures\VRChat</code> (by default),
+          then drag and drop them all here. Files are sorted by name, so the
+          VRChat camera's timestamps already put them in order.
+        </p>
+      </div>
+
       <!-- ───────────────────────── frames ───────────────────────── -->
-      <section class="stage">
-        <div class="dropzone" id="dropzone" tabindex="0" role="button"
-             aria-label="Choose frames, or drop them here">
-          <input
-            type="file"
-            id="fileInput"
-            accept="image/png,image/jpeg,image/webp"
-            multiple
-            hidden
-          />
-          <svg class="dz-icon" viewBox="0 0 48 32" aria-hidden="true">
-            <rect x="1" y="1" width="46" height="30" rx="3" />
-            <path d="M12 22l7-8 6 6 4-4 7 8" />
-            <circle cx="16" cy="10" r="2.5" />
-          </svg>
-          <p class="dz-title">Drop your frames here</p>
-          <p class="dz-sub">
-            or <span class="dz-link">browse</span> - PNG, JPG or WebP, 2 frames minimum
-          </p>
-          <p class="dz-hint">
-            Look in <code>Pictures\VRChat</code>. Files are sorted by name, so the
-            camera's timestamps already put them in order.
-          </p>
+      <section class="panel" id="stripPanel" hidden>
+        <div class="panel-head">
+          <h2>Frames</h2>
+          <div class="head-meta">
+            <span class="count" id="frameCount">0</span>
+            <button class="ghost-btn" id="addMoreBtn" type="button">Add more</button>
+            <button class="ghost-btn danger" id="clearBtn" type="button">Clear</button>
+          </div>
         </div>
-
-        <div class="panel strip-panel" id="stripPanel" hidden>
-          <div class="panel-head">
-            <h2>Frames</h2>
-            <div class="head-meta">
-              <span class="count" id="frameCount">0</span>
-              <button class="ghost-btn" id="addMoreBtn" type="button">Add more</button>
-              <button class="ghost-btn danger" id="clearBtn" type="button">Clear</button>
-            </div>
-          </div>
-          <p class="panel-note">
-            Drag to reorder. Click the × to drop a frame.
-          </p>
-          <div class="film">
-            <ol class="frames" id="frameList"></ol>
-          </div>
-          <p class="warn" id="sizeWarn" hidden></p>
+        <p class="panel-note">
+          Click a frame to jump the preview to it. Drag to reorder. Click the ×
+          to drop a frame.
+        </p>
+        <div class="film">
+          <ol class="frames" id="frameList"></ol>
         </div>
-
-        <div class="panel preview-panel" id="previewPanel" hidden>
-          <div class="panel-head">
-            <h2>Preview</h2>
-            <div class="head-meta">
-              <span class="readout" id="previewMeta">-</span>
-            </div>
-          </div>
-          <div class="preview-stage">
-            <canvas id="previewCanvas" width="800" height="450"></canvas>
-          </div>
-          <div class="transport">
-            <button class="icon-btn" id="playBtn" type="button" aria-label="Pause">
-              <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">
-                <rect x="3.5" y="2.5" width="3.4" height="11" rx="1" />
-                <rect x="9.1" y="2.5" width="3.4" height="11" rx="1" />
-              </svg>
-            </button>
-            <input
-              type="range"
-              id="scrub"
-              class="scrub"
-              min="0"
-              max="0"
-              value="0"
-              step="1"
-              aria-label="Scrub frames"
-            />
-            <span class="readout mono" id="scrubLabel">1 / 1</span>
-          </div>
-          <p class="panel-note">
-            Preview shows real timing at the output size. The exported GIF adds
-            colour quantisation, so expect a small quality drop.
-          </p>
-        </div>
+        <p class="warn" id="sizeWarn" hidden></p>
       </section>
 
-      <!-- ───────────────────────── controls ───────────────────────── -->
-      <aside class="rail">
+      <!-- ───────────────────────── preview ───────────────────────── -->
+      <section class="panel preview-panel" id="previewPanel" hidden>
+        <div class="panel-head">
+          <h2>Preview</h2>
+          <div class="head-meta">
+            <span class="readout" id="previewMeta">-</span>
+          </div>
+        </div>
+        <div class="preview-stage">
+          <canvas id="previewCanvas" width="800" height="450"></canvas>
+        </div>
+        <div class="transport">
+          <button class="icon-btn" id="playBtn" type="button" aria-label="Pause">
+            <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">
+              <rect x="3.5" y="2.5" width="3.4" height="11" rx="1" />
+              <rect x="9.1" y="2.5" width="3.4" height="11" rx="1" />
+            </svg>
+          </button>
+          <input
+            type="range"
+            id="scrub"
+            class="scrub"
+            min="0"
+            max="0"
+            value="0"
+            step="1"
+            aria-label="Scrub frames"
+          />
+          <span class="readout mono" id="scrubLabel">1 / 1</span>
+        </div>
+        <p class="panel-note">
+          Preview shows real timing at the output size. The exported GIF adds
+          color quantization, so expect a small quality drop.
+        </p>
+      </section>
+
+      <!-- ───────────────────────── settings ───────────────────────── -->
+      <div class="drawers">
+        <details class="drawer">
+          <summary>
+            <span class="drawer-title">Size</span>
+            <span class="drawer-meta">
+              <span class="readout mono" id="sizeReadout">-</span>
+              <svg class="chev" viewBox="0 0 10 6" width="10" height="6" aria-hidden="true">
+                <path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+              </svg>
+            </span>
+          </summary>
+          <div class="drawer-body">
+            <div class="field">
+              <label for="sizePreset">Output width</label>
+              <select id="sizePreset">
+                <option value="800" selected>800 px - camera native</option>
+                <option value="640">640 px</option>
+                <option value="480">480 px</option>
+                <option value="320">320 px</option>
+                <option value="native">Match source</option>
+                <option value="custom">Custom…</option>
+              </select>
+            </div>
+            <div class="field" id="customWidthField" hidden>
+              <label for="customWidth">Custom width (px)</label>
+              <input type="number" id="customWidth" min="16" max="2048" step="2" value="800" />
+            </div>
+            <p class="panel-note">Height follows your frames' aspect ratio.</p>
+          </div>
+        </details>
+
+        <details class="drawer">
+          <summary>
+            <span class="drawer-title">Quality</span>
+            <span class="drawer-meta">
+              <span class="readout mono" id="qualityReadout">80</span>
+              <svg class="chev" viewBox="0 0 10 6" width="10" height="6" aria-hidden="true">
+                <path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+              </svg>
+            </span>
+          </summary>
+          <div class="drawer-body">
+            <input type="range" id="quality" min="1" max="100" step="1" value="80" aria-label="gifski quality" />
+            <p class="panel-note">
+              gifski's encoding quality. 80 is its default and is usually the right
+              answer - reach for the compression below before dropping this.
+            </p>
+          </div>
+        </details>
+
+        <details class="drawer">
+          <summary>
+            <span class="drawer-title">Compression</span>
+            <span class="drawer-meta">
+              <span class="readout mono" id="compressionReadout">On</span>
+              <svg class="chev" viewBox="0 0 10 6" width="10" height="6" aria-hidden="true">
+                <path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+              </svg>
+            </span>
+          </summary>
+          <div class="drawer-body">
+            <label class="switch">
+              <input type="checkbox" id="optimize" checked />
+              <span class="switch-track" aria-hidden="true"><span class="switch-thumb"></span></span>
+              <span class="switch-label" id="optimizeLabel">On</span>
+            </label>
+            <p class="panel-note">
+              A gifsicle pass over the finished GIF - the same trick ezgif uses to
+              get sizes down. Frame differencing is always applied; the two dials
+              below trade detail for bytes.
+            </p>
+            <div class="opt-body" id="optBody">
+              <div class="field">
+                <div class="field-head">
+                  <label for="lossy">Lossy</label>
+                  <span class="readout mono" id="lossyReadout">30</span>
+                </div>
+                <input type="range" id="lossy" min="0" max="200" step="5" value="30" />
+                <p class="field-note">0 is off. 30-60 is the sweet spot; past ~100 you'll see speckle.</p>
+              </div>
+              <div class="field">
+                <label for="colors">Palette</label>
+                <select id="colors">
+                  <option value="0" selected>Leave gifski's palette</option>
+                  <option value="256">256 colors</option>
+                  <option value="128">128 colors</option>
+                  <option value="64">64 colors</option>
+                  <option value="32">32 colors</option>
+                </select>
+                <p class="field-note">
+                  gifski already builds per-frame palettes, so forcing one global
+                  palette usually costs more quality than it saves. Try lossy first.
+                </p>
+              </div>
+            </div>
+          </div>
+        </details>
+
+        <details class="drawer">
+          <summary>
+            <span class="drawer-title">Color</span>
+            <span class="drawer-meta">
+              <span class="readout mono" id="colorReadout">Off</span>
+              <svg class="chev" viewBox="0 0 10 6" width="10" height="6" aria-hidden="true">
+                <path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+              </svg>
+            </span>
+          </summary>
+          <div class="drawer-body">
+            <div class="field">
+              <div class="field-head">
+                <label for="brightness">Brightness</label>
+                <span class="readout mono" id="brightnessReadout">100%</span>
+              </div>
+              <input type="range" id="brightness" min="50" max="150" step="1" value="100" />
+            </div>
+            <div class="field">
+              <div class="field-head">
+                <label for="contrast">Contrast</label>
+                <span class="readout mono" id="contrastReadout">100%</span>
+              </div>
+              <input type="range" id="contrast" min="50" max="150" step="1" value="100" />
+            </div>
+            <div class="field">
+              <div class="field-head">
+                <label for="saturation">Saturation</label>
+                <span class="readout mono" id="saturationReadout">100%</span>
+              </div>
+              <input type="range" id="saturation" min="0" max="200" step="1" value="100" />
+            </div>
+            <button class="ghost-btn reset-btn" id="colorReset" type="button">
+              Reset to neutral
+            </button>
+            <p class="panel-note">
+              Applied to the preview and to the exported GIF. 100% leaves your
+              frames exactly as VRChat captured them.
+            </p>
+          </div>
+        </details>
+      </div>
+
+      <!-- ─────────────── speed, naming and the render action ─────────────── -->
+      <div class="split">
         <section class="panel">
           <div class="panel-head">
             <h2>Speed</h2>
@@ -147,8 +290,8 @@
             <div><dt>Loop length</dt><dd class="mono" id="lengthFact">-</dd></div>
           </dl>
           <p class="panel-note">
-            100% is real time: the camera captures one frame every 5 Unity
-            keyframes, and Unity animates at 60 fps, so 100% is 12 fps.
+            If you want to match the speed seen in VRChat, then match the
+            "Recording Speed" value from the in-game menu slider.
           </p>
           <p class="warn" id="fpsWarn" hidden>
             Above 20 fps, GIF's 10 ms timing grid makes playback uneven and some
@@ -156,124 +299,60 @@
           </p>
         </section>
 
-        <section class="panel">
-          <div class="panel-head">
-            <h2>Size</h2>
-            <span class="readout mono" id="sizeReadout">-</span>
-          </div>
-          <div class="field">
-            <label for="sizePreset">Output width</label>
-            <select id="sizePreset">
-              <option value="800" selected>800 px - camera native</option>
-              <option value="640">640 px</option>
-              <option value="480">480 px</option>
-              <option value="320">320 px</option>
-              <option value="native">Match source</option>
-              <option value="custom">Custom…</option>
-            </select>
-          </div>
-          <div class="field" id="customWidthField" hidden>
-            <label for="customWidth">Custom width (px)</label>
-            <input type="number" id="customWidth" min="16" max="2048" step="2" value="800" />
-          </div>
-          <p class="panel-note">Height follows your frames' aspect ratio.</p>
-        </section>
-
-        <section class="panel">
-          <div class="panel-head">
-            <h2>Quality</h2>
-            <span class="readout mono" id="qualityReadout">80</span>
-          </div>
-          <input type="range" id="quality" min="1" max="100" step="1" value="80" aria-label="gifski quality" />
-          <p class="panel-note">
-            gifski's encoding quality. 80 is its default and is usually the right
-            answer - reach for the compression below before dropping this.
-          </p>
-        </section>
-
-        <section class="panel">
-          <div class="panel-head">
-            <h2>Compression</h2>
-            <label class="switch">
-              <input type="checkbox" id="optimize" checked />
-              <span class="switch-track" aria-hidden="true"><span class="switch-thumb"></span></span>
-              <span class="switch-label" id="optimizeLabel">On</span>
-            </label>
-          </div>
-          <p class="panel-note">
-            A gifsicle pass over the finished GIF - the same trick ezgif uses to
-            get sizes down. Frame differencing is always applied; the two dials
-            below trade detail for bytes.
-          </p>
-          <div class="opt-body" id="optBody">
-            <div class="field">
-              <div class="field-head">
-                <label for="lossy">Lossy</label>
-                <span class="readout mono" id="lossyReadout">30</span>
-              </div>
-              <input type="range" id="lossy" min="0" max="200" step="5" value="30" />
-              <p class="field-note">0 is off. 30-60 is the sweet spot; past ~100 you'll see speckle.</p>
+        <div class="stack">
+          <section class="panel">
+            <div class="panel-head">
+              <h2>File name</h2>
+              <span class="readout mono" id="fileNamePreview">vrchat-imax.gif</span>
             </div>
-            <div class="field">
-              <label for="colors">Palette</label>
-              <select id="colors">
-                <option value="0" selected>Leave gifski's palette</option>
-                <option value="256">256 colours</option>
-                <option value="128">128 colours</option>
-                <option value="64">64 colours</option>
-                <option value="32">32 colours</option>
-              </select>
-              <p class="field-note">
-                gifski already builds per-frame palettes, so forcing one global
-                palette usually costs more quality than it saves. Try lossy first.
-              </p>
+            <div class="filename-row">
+              <input
+                type="text"
+                id="fileName"
+                value="vrchat-imax"
+                spellcheck="false"
+                autocomplete="off"
+                aria-label="File name, without extension"
+              />
+              <span class="suffix mono">.gif</span>
             </div>
-          </div>
-        </section>
+            <p class="panel-note">
+              What the file is called when you download it. Characters Windows
+              won't accept in a file name are removed automatically.
+            </p>
+          </section>
 
-        <section class="panel">
-          <div class="panel-head"><h2>Looping</h2></div>
-          <div class="field">
-            <label for="loop">Repeat</label>
-            <!-- gifski: -1 loops forever, 0 plays once, n adds n extra loops. -->
-            <select id="loop">
-              <option value="-1" selected>Loop forever</option>
-              <option value="0">Play once</option>
-              <option value="1">Play twice</option>
-              <option value="4">Play 5 times</option>
-            </select>
+          <div class="render-block">
+            <button class="render-btn" id="renderBtn" type="button" disabled>
+              Render GIF
+            </button>
+            <div class="progress" id="progress" hidden>
+              <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+              <p class="progress-label mono" id="progressLabel">Preparing…</p>
+            </div>
+            <p class="error" id="error" hidden></p>
           </div>
-        </section>
-
-        <div class="render-block">
-          <button class="render-btn" id="renderBtn" type="button" disabled>
-            Render GIF
-          </button>
-          <div class="progress" id="progress" hidden>
-            <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
-            <p class="progress-label mono" id="progressLabel">Preparing…</p>
-          </div>
-          <p class="error" id="error" hidden></p>
         </div>
+      </div>
 
-        <section class="panel result-panel" id="resultPanel" hidden>
-          <div class="panel-head">
-            <h2>Result</h2>
-            <span class="badge" id="savedBadge" hidden></span>
-          </div>
-          <div class="result-stage">
-            <img id="resultImg" alt="Your rendered GIF" />
-          </div>
-          <dl class="facts result-facts">
-            <div><dt>Size</dt><dd class="mono" id="rSize">-</dd></div>
-            <div><dt>Dimensions</dt><dd class="mono" id="rDims">-</dd></div>
-            <div><dt>Frames</dt><dd class="mono" id="rFrames">-</dd></div>
-            <div><dt>Duration</dt><dd class="mono" id="rDuration">-</dd></div>
-          </dl>
-          <p class="panel-note" id="rCompression" hidden></p>
-          <a class="download-btn" id="downloadBtn" download="imax.gif">Download GIF</a>
-        </section>
-      </aside>
+      <!-- ───────────────────────── result ───────────────────────── -->
+      <section class="panel result-panel" id="resultPanel" hidden>
+        <div class="panel-head">
+          <h2>Result</h2>
+          <span class="badge" id="savedBadge" hidden></span>
+        </div>
+        <div class="result-stage">
+          <img id="resultImg" alt="Your rendered GIF" />
+        </div>
+        <dl class="facts result-facts">
+          <div><dt>Size</dt><dd class="mono" id="rSize">-</dd></div>
+          <div><dt>Dimensions</dt><dd class="mono" id="rDims">-</dd></div>
+          <div><dt>Frames</dt><dd class="mono" id="rFrames">-</dd></div>
+          <div><dt>Duration</dt><dd class="mono" id="rDuration">-</dd></div>
+        </dl>
+        <p class="panel-note" id="rCompression" hidden></p>
+        <a class="download-btn" id="downloadBtn" download="vrchat-imax.gif">Download GIF</a>
+      </section>
     </main>
 
     <footer class="colophon">
@@ -283,6 +362,10 @@
         and
         <a href="https://www.lcdf.org/gifsicle/" rel="noopener noreferrer" target="_blank">gifsicle</a>
         compiled to WebAssembly. No uploads, no server, no account.
+      </p>
+      <p>
+        View the VRChat asset page here:
+        <a href="https://foxes.cafe/gifcamera" rel="noopener noreferrer" target="_blank">https://foxes.cafe/gifcamera</a>
       </p>
       <p class="fine">
         gifski (AGPL-3.0) and gifsicle (GPL-2.0) are copyleft licensed, so this

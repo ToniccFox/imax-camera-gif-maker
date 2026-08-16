@@ -23,6 +23,10 @@ const UNITY_FPS = 60;
 const KEYFRAMES_PER_CAPTURE = 5;
 const BASE_FPS = UNITY_FPS / KEYFRAMES_PER_CAPTURE;
 
+// gifski's repeat: -1 loops forever. Every GIF made here loops, so there is no
+// control for it.
+const REPEAT_FOREVER = -1;
+
 const $ = (id) => document.getElementById(id);
 
 const el = {
@@ -50,6 +54,9 @@ const el = {
   delayFact: $('delayFact'),
   lengthFact: $('lengthFact'),
 
+  fileName: $('fileName'),
+  fileNamePreview: $('fileNamePreview'),
+
   sizePreset: $('sizePreset'),
   customWidthField: $('customWidthField'),
   customWidth: $('customWidth'),
@@ -60,11 +67,20 @@ const el = {
 
   optimize: $('optimize'),
   optimizeLabel: $('optimizeLabel'),
+  compressionReadout: $('compressionReadout'),
   optBody: $('optBody'),
   lossy: $('lossy'),
   lossyReadout: $('lossyReadout'),
   colors: $('colors'),
-  loop: $('loop'),
+
+  colorReadout: $('colorReadout'),
+  colorReset: $('colorReset'),
+  brightness: $('brightness'),
+  brightnessReadout: $('brightnessReadout'),
+  contrast: $('contrast'),
+  contrastReadout: $('contrastReadout'),
+  saturation: $('saturation'),
+  saturationReadout: $('saturationReadout'),
 
   renderBtn: $('renderBtn'),
   progress: $('progress'),
@@ -92,7 +108,10 @@ const state = {
   optimize: true,
   lossy: 30,
   colors: 0,
-  loop: -1, // gifski: -1 = loop forever
+  // Color correction, as percentages. 100 is untouched.
+  brightness: 100,
+  contrast: 100,
+  saturation: 100,
   playing: true,
   playIndex: 0,
   busy: false,
@@ -119,7 +138,7 @@ function effectiveFps() {
 
 /**
  * GIF stores delays in hundredths of a second, so the real playback rate is
- * quantised. Report - and encode - what viewers will actually do, not the
+ * quantized. Report - and encode - what viewers will actually do, not the
  * nominal rate.
  */
 function frameDelayMs() {
@@ -129,6 +148,35 @@ function frameDelayMs() {
 /** Trim a rate to something readable: 12, 8.4, 0.12. */
 function formatFps(fps) {
   return Number.isInteger(fps) ? String(fps) : String(Number(fps.toFixed(2)));
+}
+
+const DEFAULT_FILENAME = 'vrchat-imax';
+
+/**
+ * Turn whatever is in the file name box into something Windows will accept:
+ * no reserved characters, no trailing dots or spaces, always one .gif suffix.
+ */
+function downloadName() {
+  const cleaned = el.fileName.value
+    .replace(/\.gif$/i, '')
+    // Windows-reserved characters, then any control codes. Spaces and
+    // hyphens are perfectly legal in a file name, so they survive.
+    .replace(/[\\/:*?"<>|]/g, '')
+    .replace(/\p{Cc}/gu, '')
+    .trim()
+    .replace(/[. ]+$/, '');
+  return `${cleaned || DEFAULT_FILENAME}.gif`;
+}
+
+/**
+ * Color correction as a canvas filter string. The same value drives the
+ * preview and the export, so the two can't drift apart. 'none' when neutral,
+ * which also skips the filter work entirely.
+ */
+function colorFilter() {
+  const { brightness, contrast, saturation } = state;
+  if (brightness === 100 && contrast === 100 && saturation === 100) return 'none';
+  return `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%)`;
 }
 
 /** Output dimensions, derived from the first frame's aspect ratio. */
@@ -181,6 +229,14 @@ function renderFrameList() {
         removeFrame(frame.id);
       });
 
+      // Clicking a thumbnail parks the preview on that frame. Pausing matches
+      // what the scrubber does, and you almost always click to inspect.
+      li.addEventListener('click', () => {
+        setPlaying(false);
+        state.playIndex = index;
+        drawPreview();
+      });
+
       li.append(img, idx, remove);
       return li;
     }),
@@ -192,7 +248,11 @@ function removeFrame(id) {
   if (index === -1) return;
   disposeFrame(state.frames[index]);
   state.frames.splice(index, 1);
-  state.playIndex = 0;
+
+  // Hold the preview roughly where it was instead of snapping back to frame 1.
+  if (index < state.playIndex) state.playIndex -= 1;
+  state.playIndex = Math.min(state.playIndex, Math.max(0, state.frames.length - 1));
+
   renderFrameList();
   syncUI();
 }
@@ -358,9 +418,22 @@ el.colors.addEventListener('change', () => {
   state.colors = Number(el.colors.value);
 });
 
-el.loop.addEventListener('change', () => {
-  state.loop = Number(el.loop.value);
+for (const key of ['brightness', 'contrast', 'saturation']) {
+  el[key].addEventListener('input', () => {
+    state[key] = Number(el[key].value);
+    syncUI();
+  });
+}
+
+el.colorReset.addEventListener('click', () => {
+  for (const key of ['brightness', 'contrast', 'saturation']) {
+    state[key] = 100;
+    el[key].value = 100;
+  }
+  syncUI();
 });
+
+el.fileName.addEventListener('input', syncUI);
 
 /* ─────────────────────────── preview ─────────────────────────── */
 
@@ -385,7 +458,9 @@ function drawPreview() {
   if (!frame) return;
 
   ctx.clearRect(0, 0, el.previewCanvas.width, el.previewCanvas.height);
+  ctx.filter = colorFilter();
   ctx.drawImage(frame.bitmap, 0, 0, el.previewCanvas.width, el.previewCanvas.height);
+  ctx.filter = 'none';
 
   el.scrub.value = state.playIndex;
   el.scrubLabel.textContent = `${state.playIndex + 1} / ${state.frames.length}`;
@@ -412,7 +487,9 @@ function setStage(label, determinate) {
   el.progress.hidden = false;
   el.progressLabel.textContent = label;
   el.progressFill.classList.toggle('pulse', !determinate);
-  if (determinate) el.progressFill.style.width = '18%';
+  // Clearing the inline width matters: it outranks .pulse's 100%, so leaving it
+  // set would pen the sweep inside the first 18% of the track.
+  el.progressFill.style.width = determinate ? '18%' : '';
 }
 
 function clearResult() {
@@ -437,7 +514,8 @@ el.renderBtn.addEventListener('click', async () => {
       height: size.height,
       delayMs: frameDelayMs(),
       quality: state.quality,
-      repeat: state.loop,
+      repeat: REPEAT_FOREVER,
+      filter: colorFilter(),
       optimize: state.optimize,
       lossy: state.lossy,
       colors: state.colors,
@@ -447,7 +525,8 @@ el.renderBtn.addEventListener('click', async () => {
     state.resultUrl = URL.createObjectURL(result.blob);
     el.resultImg.src = state.resultUrl;
     el.downloadBtn.href = state.resultUrl;
-    el.downloadBtn.download = `imax-${size.width}x${size.height}-${formatFps(effectiveFps())}fps.gif`;
+    // The download attribute itself is kept current by syncUI, so editing the
+    // name after a render updates the saved file without re-encoding.
 
     el.rSize.textContent = formatBytes(result.size);
     el.rDims.textContent = `${size.width} × ${size.height}`;
@@ -473,6 +552,7 @@ el.renderBtn.addEventListener('click', async () => {
     state.busy = false;
     el.progress.hidden = true;
     el.progressFill.classList.remove('pulse');
+    el.progressFill.style.width = '';
     syncUI();
   }
 });
@@ -497,12 +577,26 @@ function syncUI() {
     : '-';
   el.fpsWarn.hidden = effectiveFps() <= 20;
 
-  // Size
+  // Collapsed drawers still need to say what they are set to.
   el.sizeReadout.textContent = size ? `${size.width} × ${size.height}` : '-';
   el.qualityReadout.textContent = String(state.quality);
   el.lossyReadout.textContent = state.lossy === 0 ? 'off' : String(state.lossy);
   el.optBody.classList.toggle('off', !state.optimize);
   el.optimizeLabel.textContent = state.optimize ? 'On' : 'Off';
+  el.compressionReadout.textContent = !state.optimize
+    ? 'Off'
+    : state.lossy > 0
+      ? `Lossy ${state.lossy}`
+      : 'On';
+  el.brightnessReadout.textContent = `${state.brightness}%`;
+  el.contrastReadout.textContent = `${state.contrast}%`;
+  el.saturationReadout.textContent = `${state.saturation}%`;
+  el.colorReadout.textContent = colorFilter() === 'none' ? 'Off' : 'Adjusted';
+
+  // File name
+  const name = downloadName();
+  el.fileNamePreview.textContent = name;
+  el.downloadBtn.download = name;
 
   // Preview canvas follows the output size so what you see is what you get.
   if (size && (el.previewCanvas.width !== size.width || el.previewCanvas.height !== size.height)) {

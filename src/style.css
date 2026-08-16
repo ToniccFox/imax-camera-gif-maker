@@ -1,6 +1,6 @@
 /* ─────────────────────────────────────────────────────────────
-   IMAX Camera GIF Maker
-   Darkroom palette: warm charcoal, one amber safelight accent.
+   Tonicc's VRChat IMAX GIF Maker
+   Dark neutral charcoal with a single blue accent.
    ───────────────────────────────────────────────────────────── */
 
 :root {
@@ -15,9 +15,10 @@
   --text-2: #a29e96;
   --muted: #78746d;
 
-  --accent: #e8a04b;
-  --accent-bright: #f7b76c;
-  --accent-wash: rgba(232, 160, 75, 0.12);
+  --accent: #0196da;
+  --accent-bright: #35b3ea;
+  --accent-wash: rgba(1, 150, 218, 0.14);
+  --accent-line: rgba(1, 150, 218, 0.4);
   --good: #83c194;
   --bad: #dd7a68;
 
@@ -41,15 +42,15 @@ html {
   -webkit-text-size-adjust: 100%;
   /* Everything is sized in px, so one zoom scales the whole UI uniformly.
      Media-query breakpoints below are multiplied to match, since they are
-     evaluated against the unzoomed viewport. */
-  zoom: 1.3;
+     evaluated against the unzoomed viewport. Change this and change them. */
+  zoom: 1.1;
 }
 
 body {
   margin: 0;
   min-height: 100vh;
   background:
-    radial-gradient(1100px 620px at 50% -12%, #17161a 0%, transparent 62%),
+    radial-gradient(1100px 620px at 50% -12%, #15161b 0%, transparent 62%),
     var(--ink);
   color: var(--text);
   font-family: var(--sans);
@@ -77,7 +78,7 @@ h2 {
 
 a {
   color: var(--accent);
-  text-decoration-color: rgba(232, 160, 75, 0.35);
+  text-decoration-color: rgba(1, 150, 218, 0.4);
   text-underline-offset: 2px;
 }
 a:hover {
@@ -142,25 +143,28 @@ code {
 .layout {
   max-width: 1180px;
   margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/*
+ * Two even columns that fold to one. auto-fit collapses the empty track, so
+ * when the preview is still hidden the controls span the full width instead of
+ * hugging one side.
+ */
+.split {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 344px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr));
   gap: 20px;
   align-items: start;
 }
 
-.stage {
+.stack {
   display: flex;
   flex-direction: column;
   gap: 20px;
   min-width: 0;
-}
-
-.rail {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  position: sticky;
-  top: 20px;
 }
 
 .panel {
@@ -178,7 +182,8 @@ code {
   margin-bottom: 13px;
 }
 
-.panel-head h2 {
+.panel-head h2,
+.drawer-title {
   font-size: 10.5px;
   font-weight: 600;
   letter-spacing: 0.15em;
@@ -216,9 +221,9 @@ code {
 
 .warn {
   margin: 11px 0 0;
-  color: var(--accent);
+  color: var(--accent-bright);
   background: var(--accent-wash);
-  border: 1px solid rgba(232, 160, 75, 0.2);
+  border: 1px solid var(--accent-line);
   border-radius: var(--r-sm);
   padding: 8px 10px;
   font-size: 11.5px;
@@ -241,7 +246,7 @@ code {
   border: 1px dashed #33333c;
   border-radius: var(--r-lg);
   background: var(--ink-2);
-  padding: 46px 28px 40px;
+  padding: 34px 28px 30px;
   text-align: center;
   cursor: pointer;
   transition: border-color 0.18s var(--ease), background 0.18s var(--ease);
@@ -250,7 +255,7 @@ code {
 .dropzone:hover,
 .dropzone:focus-visible {
   border-color: var(--accent);
-  background: #131216;
+  background: #111318;
   outline: none;
 }
 
@@ -258,21 +263,6 @@ code {
   border-color: var(--accent);
   border-style: solid;
   background: var(--accent-wash);
-}
-
-.dz-icon {
-  width: 46px;
-  height: 31px;
-  fill: none;
-  stroke: var(--muted);
-  stroke-width: 1.6;
-  stroke-linejoin: round;
-  margin-bottom: 14px;
-  transition: stroke 0.18s var(--ease);
-}
-.dropzone:hover .dz-icon,
-.dropzone.hot .dz-icon {
-  stroke: var(--accent);
 }
 
 .dz-title {
@@ -294,18 +284,17 @@ code {
 }
 
 .dz-hint {
-  margin: 18px auto 0;
-  max-width: 430px;
+  margin: 16px auto 0;
+  max-width: 620px;
   color: var(--muted);
   font-size: 11.5px;
-  line-height: 1.5;
+  line-height: 1.6;
 }
 
 /* Compact form once frames are loaded. */
 .dropzone.slim {
   padding: 20px;
 }
-.dropzone.slim .dz-icon,
 .dropzone.slim .dz-hint,
 .dropzone.slim .dz-sub {
   display: none;
@@ -377,24 +366,14 @@ code {
   transform: scaleY(-1);
 }
 
+/* Frames wrap onto as many rows as they need - no horizontal scrolling. */
 .frames {
   display: flex;
+  flex-wrap: wrap;
   gap: 9px;
   list-style: none;
   margin: 0;
   padding: 4px 15px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: thin;
-  scrollbar-color: #33333c transparent;
-}
-
-.frames::-webkit-scrollbar {
-  height: 8px;
-}
-.frames::-webkit-scrollbar-thumb {
-  background: #33333c;
-  border-radius: 4px;
 }
 
 .frame {
@@ -518,6 +497,74 @@ code {
   fill: currentColor;
 }
 
+/* ───────────────────────── collapsible settings ───────────────────────── */
+
+/*
+ * Explicit counts rather than auto-fit: with four drawers, auto-fit happily
+ * lands on three-plus-one at some widths, which looks broken. 4, 2 or 1 only.
+ */
+.drawers {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  align-items: start;
+}
+
+.drawer {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  transition: border-color 0.15s var(--ease);
+}
+.drawer[open] {
+  border-color: #32323c;
+}
+
+.drawer > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 16px;
+  cursor: pointer;
+  list-style: none;
+  border-radius: var(--r-lg);
+}
+/* Hide the native disclosure triangle in every engine. */
+.drawer > summary::-webkit-details-marker {
+  display: none;
+}
+.drawer > summary::marker {
+  content: '';
+}
+.drawer > summary:hover .drawer-title {
+  color: var(--text);
+}
+.drawer > summary:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent-line);
+}
+
+.drawer-meta {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.chev {
+  color: var(--muted);
+  flex: none;
+  transition: transform 0.2s var(--ease), color 0.15s var(--ease);
+}
+.drawer[open] .chev {
+  transform: rotate(180deg);
+  color: var(--accent);
+}
+
+.drawer-body {
+  padding: 2px 16px 17px;
+}
+
 /* ───────────────────────── inputs ───────────────────────── */
 
 input[type='range'] {
@@ -597,7 +644,7 @@ input[type='range']:focus-visible::-webkit-slider-thumb {
   border-color: #3a3a44;
 }
 .presets button.on {
-  color: var(--ink);
+  color: #04121a;
   background: var(--accent);
   border-color: var(--accent);
   font-weight: 600;
@@ -628,7 +675,8 @@ label {
 }
 
 select,
-input[type='number'] {
+input[type='number'],
+input[type='text'] {
   width: 100%;
   font-family: var(--sans);
   font-size: 13px;
@@ -640,7 +688,8 @@ input[type='number'] {
   transition: border-color 0.15s var(--ease);
 }
 select:focus,
-input[type='number']:focus {
+input[type='number']:focus,
+input[type='text']:focus {
   outline: none;
   border-color: var(--accent);
 }
@@ -651,6 +700,23 @@ select {
   background-repeat: no-repeat;
   background-position: right 11px center;
   padding-right: 30px;
+}
+
+/* File name */
+.filename-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.filename-row input {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--mono);
+}
+.suffix {
+  flex: none;
+  color: var(--muted);
+  font-size: 13px;
 }
 
 /* Switch */
@@ -687,7 +753,7 @@ select {
 }
 .switch input:checked + .switch-track {
   background: var(--accent-wash);
-  border-color: rgba(232, 160, 75, 0.45);
+  border-color: var(--accent-line);
 }
 .switch input:checked + .switch-track .switch-thumb {
   transform: translateX(14px);
@@ -700,6 +766,12 @@ select {
   font-family: var(--mono);
   font-size: 11px;
   color: var(--text-2);
+}
+
+.reset-btn {
+  display: block;
+  width: 100%;
+  margin-top: 14px;
 }
 
 .opt-body {
@@ -739,14 +811,16 @@ select {
   color: var(--text);
 }
 .result-facts {
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
 }
 
 /* ───────────────────────── render + result ───────────────────────── */
 
+/* Sits in the right-hand column under File name, so it fills that column. */
 .render-block {
   display: flex;
   flex-direction: column;
+  align-items: stretch;
 }
 
 .render-btn {
@@ -755,7 +829,7 @@ select {
   font-size: 14px;
   font-weight: 600;
   letter-spacing: 0.01em;
-  color: var(--ink);
+  color: #04121a;
   background: var(--accent);
   border: 1px solid var(--accent);
   border-radius: var(--r-md);
@@ -778,6 +852,7 @@ select {
 
 .progress {
   margin-top: 12px;
+  width: 100%;
 }
 .progress-track {
   height: 3px;
@@ -792,25 +867,43 @@ select {
   border-radius: 2px;
   transition: width 0.25s var(--ease);
 }
+/*
+ * Indeterminate sweep. Driven by a transform rather than background-position:
+ * percentage background positions resolve against (container - image) width,
+ * so a band 40% wide can never actually reach either edge that way.
+ * translateX percentages resolve against the band's own width, which makes the
+ * travel exact: -100% puts its right edge on the left edge of the track, and
+ * 250% (1 / 0.4) puts its left edge on the right edge.
+ */
 .progress-fill.pulse {
   width: 100%;
+  background: transparent;
+  position: relative;
+  overflow: hidden;
+}
+.progress-fill.pulse::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 40%;
   background: linear-gradient(90deg, transparent, var(--accent), transparent);
-  background-size: 40% 100%;
-  background-repeat: no-repeat;
   animation: sweep 1.15s infinite linear;
 }
 @keyframes sweep {
   from {
-    background-position: -45% 0;
+    transform: translateX(-100%);
   }
   to {
-    background-position: 145% 0;
+    transform: translateX(250%);
   }
 }
 .progress-label {
   margin: 7px 0 0;
   font-size: 11px;
   color: var(--text-2);
+  text-align: center;
 }
 
 .badge {
@@ -840,7 +933,8 @@ select {
 
 .download-btn {
   display: block;
-  margin-top: 13px;
+  margin: 13px auto 0;
+  max-width: 420px;
   text-align: center;
   font-size: 13.5px;
   font-weight: 600;
@@ -866,28 +960,33 @@ select {
   color: var(--muted);
   font-size: 11.5px;
   line-height: 1.6;
+  text-align: center;
 }
 .colophon p {
   margin: 0;
 }
-.colophon .fine {
+.colophon p + p {
   margin-top: 5px;
+}
+.colophon .fine {
   opacity: 0.75;
 }
 
 /* ───────────────────────── responsive ───────────────────────── */
 
-/* 980 and 560 design widths, scaled by the 1.3 root zoom. */
-@media (max-width: 1274px) {
-  .layout {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .rail {
-    position: static;
+/* Four drawers need 4x215 + 3x14 = 902 design px of layout, so 950 including
+   the body padding. 950 x 1.1 zoom = 1045 viewport px. */
+@media (max-width: 1045px) {
+  .drawers {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-@media (max-width: 728px) {
+/* 560 design width, scaled by the 1.1 root zoom. */
+@media (max-width: 616px) {
+  .drawers {
+    grid-template-columns: minmax(0, 1fr);
+  }
   body {
     padding: 0 15px 48px;
   }
@@ -897,8 +996,10 @@ select {
   .masthead h1 {
     font-size: 21px;
   }
-  .result-facts {
-    grid-template-columns: 1fr;
+  /* Otherwise a 16-frame strip is one thumbnail per row on a phone. */
+  .frame,
+  .frame img {
+    height: 56px;
   }
 }
 
