@@ -497,6 +497,27 @@ code {
   fill: currentColor;
 }
 
+/* Mirroring sits apart from the playback controls: it changes the export. */
+.flip-group {
+  flex: none;
+  display: flex;
+  gap: 6px;
+  margin-left: 2px;
+  padding-left: 12px;
+  border-left: 1px solid var(--line);
+}
+
+.flip-btn[aria-pressed='true'] {
+  color: #04121a;
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.flip-btn[aria-pressed='true']:hover {
+  color: #04121a;
+  background: var(--accent-bright);
+  border-color: var(--accent-bright);
+}
+
 /* ───────────────────────── collapsible settings ───────────────────────── */
 
 /*

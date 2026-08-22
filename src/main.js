@@ -6,7 +6,7 @@ import '@fontsource/ibm-plex-mono/500.css';
 import './style.css';
 
 import { loadFrames, disposeFrame, sameDimensions } from './frames.js';
-import { renderGif } from './encoder.js';
+import { renderGif, applyFlip, resetTransform } from './encoder.js';
 
 // gifski (AGPL-3.0) and gifsicle (GPL-2.0) are both copyleft, so a public
 // deployment has to offer its source. This is the link rendered in the footer;
@@ -45,6 +45,8 @@ const el = {
   playBtn: $('playBtn'),
   scrub: $('scrub'),
   scrubLabel: $('scrubLabel'),
+  flipHBtn: $('flipH'),
+  flipVBtn: $('flipV'),
 
   speed: $('speed'),
   speedReadout: $('speedReadout'),
@@ -112,6 +114,9 @@ const state = {
   brightness: 100,
   contrast: 100,
   saturation: 100,
+  // Mirroring. Baked into the export, not just the preview.
+  flipH: false,
+  flipV: false,
   playing: true,
   playIndex: 0,
   busy: false,
@@ -447,6 +452,13 @@ function setPlaying(playing) {
 
 el.playBtn.addEventListener('click', () => setPlaying(!state.playing));
 
+for (const [key, node] of [['flipH', el.flipHBtn], ['flipV', el.flipVBtn]]) {
+  node.addEventListener('click', () => {
+    state[key] = !state[key];
+    syncUI();
+  });
+}
+
 el.scrub.addEventListener('input', () => {
   setPlaying(false);
   state.playIndex = Number(el.scrub.value);
@@ -457,9 +469,13 @@ function drawPreview() {
   const frame = state.frames[state.playIndex];
   if (!frame) return;
 
-  ctx.clearRect(0, 0, el.previewCanvas.width, el.previewCanvas.height);
+  const { width, height } = el.previewCanvas;
+  resetTransform(ctx);
+  ctx.clearRect(0, 0, width, height);
   ctx.filter = colorFilter();
-  ctx.drawImage(frame.bitmap, 0, 0, el.previewCanvas.width, el.previewCanvas.height);
+  applyFlip(ctx, width, height, state.flipH, state.flipV);
+  ctx.drawImage(frame.bitmap, 0, 0, width, height);
+  resetTransform(ctx);
   ctx.filter = 'none';
 
   el.scrub.value = state.playIndex;
@@ -516,6 +532,8 @@ el.renderBtn.addEventListener('click', async () => {
       quality: state.quality,
       repeat: REPEAT_FOREVER,
       filter: colorFilter(),
+      flipH: state.flipH,
+      flipV: state.flipV,
       optimize: state.optimize,
       lossy: state.lossy,
       colors: state.colors,
@@ -592,6 +610,8 @@ function syncUI() {
   el.contrastReadout.textContent = `${state.contrast}%`;
   el.saturationReadout.textContent = `${state.saturation}%`;
   el.colorReadout.textContent = colorFilter() === 'none' ? 'Off' : 'Adjusted';
+  el.flipHBtn.setAttribute('aria-pressed', String(state.flipH));
+  el.flipVBtn.setAttribute('aria-pressed', String(state.flipV));
 
   // File name
   const name = downloadName();

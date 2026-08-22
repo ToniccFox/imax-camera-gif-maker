@@ -14,11 +14,28 @@ import gifsicle from 'gifsicle-wasm-browser';
 import GifskiWorker from './gifski.worker.js?worker';
 
 /**
- * Draw every frame to the output size and hand back raw RGBA buffers.
- * `filter` is a canvas filter string, so color correction is baked in here
- * using the exact value the preview drew with.
+ * Point the canvas at the requested orientation. Exported so the preview builds
+ * the identical matrix - the two cannot disagree about which way is up.
  */
-function rasterize(frames, width, height, filter) {
+export function applyFlip(ctx, width, height, flipH, flipV) {
+  ctx.setTransform(
+    flipH ? -1 : 1, 0,
+    0, flipV ? -1 : 1,
+    flipH ? width : 0, flipV ? height : 0,
+  );
+}
+
+/** Reset to an untransformed canvas. */
+export function resetTransform(ctx) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+}
+
+/**
+ * Draw every frame to the output size and hand back raw RGBA buffers. Color
+ * correction and mirroring are baked in here using the exact same filter string
+ * and transform the preview drew with.
+ */
+function rasterize(frames, width, height, filter, flipH, flipV) {
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
@@ -30,8 +47,11 @@ function rasterize(frames, width, height, filter) {
   return frames.map((frame) => {
     // Clear rather than fill: VRChat can emit PNGs with alpha, and gifski maps
     // that onto GIF's single transparent index.
+    resetTransform(ctx);
     ctx.clearRect(0, 0, width, height);
+    applyFlip(ctx, width, height, flipH, flipV);
     ctx.drawImage(frame.bitmap, 0, 0, width, height);
+    resetTransform(ctx);
     return ctx.getImageData(0, 0, width, height).data.buffer;
   });
 }
@@ -91,13 +111,15 @@ export async function renderGif({
   quality,
   repeat,
   filter,
+  flipH,
+  flipV,
   optimize,
   lossy,
   colors,
   onStage,
 }) {
   onStage('Preparing frames', true);
-  const buffers = rasterize(frames, width, height, filter);
+  const buffers = rasterize(frames, width, height, filter, flipH, flipV);
 
   // Explicit per-frame durations rather than an fps figure. The speed control
   // reaches fractional rates (1% of 12 fps is 0.12 fps), and passing the delay

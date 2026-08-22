@@ -30,6 +30,7 @@ output rather than failing the render.
 | **Quality** | gifski's encoding quality, 1-100. Default 80. |
 | **Compression** | The gifsicle pass: lossy amount and optional palette reduction. |
 | **Color** | Brightness, contrast and saturation, each as a percentage. |
+| **Flip** | Mirror horizontally or vertically, from the preview's transport row. |
 
 ## If you fork this
 
@@ -129,6 +130,12 @@ vite.config.js           build config, dev-server headers, PWA
   same string is used for the on-screen preview and for rasterizing frames on
   the way into the encoder, so the preview cannot drift away from the export.
   At neutral it resolves to `'none'` and the filter work is skipped entirely.
+- **Flipping** works the same way. `applyFlip()` in `src/encoder.js` builds one
+  canvas matrix that both the preview and the rasterizer use, so orientation
+  cannot diverge between what you see and what you download. The buttons sit on
+  the preview's transport row rather than in a drawer, so the result is visible
+  the instant you click - which is what you want for a correction you apply by
+  eye, usually to undo a mirrored capture.
 - **Looping.** Every GIF loops forever; there is no control for it. Worth
   knowing if you add one back: gifski's `repeat` is `-1` for infinite, `0` for
   play-once, and `n` for n extra loops - the opposite of what you'd guess. The

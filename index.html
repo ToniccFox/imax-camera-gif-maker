@@ -118,10 +118,35 @@
             aria-label="Scrub frames"
           />
           <span class="readout mono" id="scrubLabel">1 / 1</span>
+          <div class="flip-group">
+            <button class="icon-btn flip-btn" id="flipH" type="button"
+                    aria-pressed="false" aria-label="Flip horizontally"
+                    title="Flip horizontally">
+              <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">
+                <path d="M6.8 3 1.8 8l5 5z" fill="currentColor" />
+                <path d="M9.2 3 14.2 8l-5 5z" fill="none" stroke="currentColor"
+                      stroke-width="1.3" stroke-linejoin="round" />
+                <path d="M8 1v14" fill="none" stroke="currentColor"
+                      stroke-width="1" stroke-dasharray="2 2" opacity=".5" />
+              </svg>
+            </button>
+            <button class="icon-btn flip-btn" id="flipV" type="button"
+                    aria-pressed="false" aria-label="Flip vertically"
+                    title="Flip vertically">
+              <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">
+                <path d="M3 6.8 8 1.8l5 5z" fill="currentColor" />
+                <path d="M3 9.2 8 14.2l5-5z" fill="none" stroke="currentColor"
+                      stroke-width="1.3" stroke-linejoin="round" />
+                <path d="M1 8h14" fill="none" stroke="currentColor"
+                      stroke-width="1" stroke-dasharray="2 2" opacity=".5" />
+              </svg>
+            </button>
+          </div>
         </div>
         <p class="panel-note">
-          Preview shows real timing at the output size. The exported GIF adds
-          color quantization, so expect a small quality drop.
+          Preview shows real timing and orientation at the output size - flips are
+          baked into the exported GIF, not just this preview. Expect a small
+          quality drop from color quantization.
         </p>
       </section>
 
